@@ -27,10 +27,12 @@
             y: canvas.height / 2,
             size: 50,
             color: 'blue',
-            speed: 5
+            speed: 5,
+            direction: 'right'
         };
 
         const enemies = [];
+        const projectiles = [];
         const enemyImageURL = 'https://art.pixilart.com/3fc9dd342c26319.png';
         const playerImageURL = 'https://upload.wikimedia.org/wikipedia/commons/3/32/Runner_stickman.png';
 
@@ -38,14 +40,31 @@
         playerImage.src = playerImageURL;
 
         function drawPlayer() {
-            ctx.drawImage(playerImage, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+            ctx.save();
+            if (player.direction === 'left') {
+                ctx.scale(-1, 1);
+                ctx.drawImage(playerImage, -player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+            } else {
+                ctx.drawImage(playerImage, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+            }
+            ctx.restore();
         }
 
         function createEnemy() {
             const size = 30;
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
-            enemies.push({ x, y, size });
+            enemies.push({ x, y, size, speed: 1 });
+        }
+
+        function moveEnemies() {
+            enemies.forEach(enemy => {
+                const dx = player.x - enemy.x;
+                const dy = player.y - enemy.y;
+                const angle = Math.atan2(dy, dx);
+                enemy.x += Math.cos(angle) * enemy.speed;
+                enemy.y += Math.sin(angle) * enemy.speed;
+            });
         }
 
         function drawEnemies() {
@@ -59,8 +78,76 @@
         function movePlayer() {
             if (keys['ArrowUp']) player.y -= player.speed;
             if (keys['ArrowDown']) player.y += player.speed;
-            if (keys['ArrowLeft']) player.x -= player.speed;
-            if (keys['ArrowRight']) player.x += player.speed;
+            if (keys['ArrowLeft']) {
+                player.x -= player.speed;
+                player.direction = 'left';
+            }
+            if (keys['ArrowRight']) {
+                player.x += player.speed;
+                player.direction = 'right';
+            }
+        }
+
+        function createProjectile(targetX, targetY) {
+            const angle = Math.atan2(targetY - player.y, targetX - player.x);
+            const speed = 8;
+            projectiles.push({
+                x: player.x,
+                y: player.y,
+                size: 5,
+                speed: speed,
+                dx: Math.cos(angle) * speed,
+                dy: Math.sin(angle) * speed
+            });
+        }
+
+        function moveProjectiles() {
+            projectiles.forEach((projectile, index) => {
+                projectile.x += projectile.dx;
+                projectile.y += projectile.dy;
+
+                // Remove projectiles that are out of bounds
+                if (
+                    projectile.x < 0 || projectile.x > canvas.width ||
+                    projectile.y < 0 || projectile.y > canvas.height
+                ) {
+                    projectiles.splice(index, 1);
+                }
+            });
+        }
+
+        function drawProjectiles() {
+            projectiles.forEach(projectile => {
+                ctx.beginPath();
+                ctx.arc(projectile.x, projectile.y, projectile.size, 0, Math.PI * 2);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function checkCollisions() {
+            enemies.forEach((enemy, enemyIndex) => {
+                // Check collision with player
+                const dx = player.x - enemy.x;
+                const dy = player.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < player.size / 2 + enemy.size / 2) {
+                    alert("Game Over");
+                    location.reload();
+                }
+
+                // Check collision with projectiles
+                projectiles.forEach((projectile, projectileIndex) => {
+                    const dx = projectile.x - enemy.x;
+                    const dy = projectile.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < projectile.size + enemy.size / 2) {
+                        enemies.splice(enemyIndex, 1);
+                        projectiles.splice(projectileIndex, 1);
+                    }
+                });
+            });
         }
 
         const keys = {};
@@ -71,15 +158,26 @@
             keys[e.key] = false;
         });
 
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const targetX = e.clientX - rect.left;
+            const targetY = e.clientY - rect.top;
+            createProjectile(targetX, targetY);
+        });
+
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             movePlayer();
+            moveEnemies();
+            moveProjectiles();
+            checkCollisions();
             drawPlayer();
             drawEnemies();
+            drawProjectiles();
             requestAnimationFrame(gameLoop);
         }
 
-        setInterval(createEnemy, 2000); // Spawn shit (aka enemy)
+        setInterval(createEnemy, 2000);
         gameLoop();
     </script>
 </body>
