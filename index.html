@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surviving-Vampires</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 50,
+            color: 'blue',
+            speed: 5
+        };
+
+        const enemies = [];
+        const enemyImageURL = 'https://art.pixilart.com/3fc9dd342c26319.png';
+        const playerImageURL = 'https://upload.wikimedia.org/wikipedia/commons/3/32/Runner_stickman.png';
+
+        let playerImage = new Image();
+        playerImage.src = playerImageURL;
+
+        function drawPlayer() {
+            ctx.drawImage(playerImage, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
+        }
+
+        function createEnemy() {
+            const size = 30;
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            enemies.push({ x, y, size });
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                const img = new Image();
+                img.src = enemyImageURL;
+                ctx.drawImage(img, enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
+            });
+        }
+
+        function movePlayer() {
+            if (keys['ArrowUp']) player.y -= player.speed;
+            if (keys['ArrowDown']) player.y += player.speed;
+            if (keys['ArrowLeft']) player.x -= player.speed;
+            if (keys['ArrowRight']) player.x += player.speed;
+        }
+
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            movePlayer();
+            drawPlayer();
+            drawEnemies();
+            requestAnimationFrame(gameLoop);
+        }
+
+        setInterval(createEnemy, 2000); // Spawn shit (aka enemy)
+        gameLoop();
+    </script>
+</body>
+</html>
