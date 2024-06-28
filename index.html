@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surviving-Vampires</title>
+    <title>Vampire Survivors Inspired Game</title>
     <style>
         body {
             margin: 0;
@@ -12,13 +12,25 @@
         canvas {
             display: block;
         }
+        #currencyCounter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <div id="currencyCounter">example-currency-exchangeable-for-goods-and-services: 0</div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const currencyCounter = document.getElementById('currencyCounter');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -28,13 +40,14 @@
             size: 50,
             color: 'blue',
             speed: 5,
-            direction: 'right'
+            direction: 'right' // 'right' or 'left'
         };
 
+        let currency = 0;
         const enemies = [];
         const projectiles = [];
-        const enemyImageURL = 'https://art.pixilart.com/3fc9dd342c26319.png';
-        const playerImageURL = 'https://upload.wikimedia.org/wikipedia/commons/3/32/Runner_stickman.png';
+        const enemyImageURL = 'https://example.com/enemy.png'; // replace with actual image URL
+        const playerImageURL = 'https://example.com/player.png'; // replace with actual image URL
 
         let playerImage = new Image();
         playerImage.src = playerImageURL;
@@ -145,6 +158,8 @@
                     if (distance < projectile.size + enemy.size / 2) {
                         enemies.splice(enemyIndex, 1);
                         projectiles.splice(projectileIndex, 1);
+                        currency += 2;
+                        currencyCounter.textContent = `example-currency-exchangeable-for-goods-and-services: ${currency}`;
                     }
                 });
             });
@@ -177,7 +192,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        setInterval(createEnemy, 2000);
+        setInterval(createEnemy, 2000); // Create a new enemy every 2 seconds
         gameLoop();
     </script>
 </body>
