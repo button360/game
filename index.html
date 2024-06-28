@@ -46,13 +46,11 @@
         let currency = 0;
         const enemies = [];
         const projectiles = [];
-        const enemyImageURL = 'https://example.com/enemy.png'; // replace with actual image URL
-        const playerImageURL = 'https://example.com/player.png'; // replace with actual image URL
+        const enemyImageURL = 'https://art.pixilart.com/3fc9dd342c26319.png';
+        const playerImageURL = 'https://upload.wikimedia.org/wikipedia/commons/3/32/Runner_stickman.png';
 
         let playerImage = new Image();
         playerImage.src = playerImageURL;
-        let enemyImage = new Image();
-        enemyImage.src = enemyImageURL;
 
         function drawPlayer() {
             ctx.save();
@@ -84,7 +82,9 @@
 
         function drawEnemies() {
             enemies.forEach(enemy => {
-                ctx.drawImage(enemyImage, enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
+                const img = new Image();
+                img.src = enemyImageURL;
+                ctx.drawImage(img, enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
             });
         }
 
@@ -192,16 +192,8 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function startGame() {
-            playerImage.onload = () => {
-                enemyImage.onload = () => {
-                    setInterval(createEnemy, 2000); // Create a new enemy every 2 seconds
-                    gameLoop();
-                };
-            };
-        }
-
-        startGame();
+        setInterval(createEnemy, 2000); // Create a new enemy every 2 seconds
+        gameLoop();
     </script>
 </body>
 </html>
