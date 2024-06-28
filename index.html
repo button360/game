@@ -51,6 +51,8 @@
 
         let playerImage = new Image();
         playerImage.src = playerImageURL;
+        let enemyImage = new Image();
+        enemyImage.src = enemyImageURL;
 
         function drawPlayer() {
             ctx.save();
@@ -82,9 +84,7 @@
 
         function drawEnemies() {
             enemies.forEach(enemy => {
-                const img = new Image();
-                img.src = enemyImageURL;
-                ctx.drawImage(img, enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
+                ctx.drawImage(enemyImage, enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
             });
         }
 
@@ -192,8 +192,16 @@
             requestAnimationFrame(gameLoop);
         }
 
-        setInterval(createEnemy, 2000); // Create a new enemy every 2 seconds
-        gameLoop();
+        function startGame() {
+            playerImage.onload = () => {
+                enemyImage.onload = () => {
+                    setInterval(createEnemy, 2000); // Create a new enemy every 2 seconds
+                    gameLoop();
+                };
+            };
+        }
+
+        startGame();
     </script>
 </body>
 </html>
