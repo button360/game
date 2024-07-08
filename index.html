@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vampire Survivors Inspired Game</title>
+    <title>Surviving-Vampires</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
+            background-color: #2c2c2c;
         }
         canvas {
             display: block;
@@ -22,15 +23,57 @@
             padding: 10px;
             border-radius: 5px;
         }
+        #healthBar {
+            position: absolute;
+            width: 50px;
+            height: 10px;
+            background-color: red;
+            border: 1px solid white;
+            border-radius: 2px;
+        }
+        #health {
+            height: 100%;
+            background-color: green;
+            width: 100%;
+            border-radius: 2px;
+        }
+        #healthButtons {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+        }
+        .button {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="currencyCounter">example-currency-exchangeable-for-goods-and-services: 0</div>
+    <div id="healthBar"><div id="health"></div></div>
+    <div id="healthButtons">
+        <a href="#" id="increaseHealth" class="button">+HEALTH (-50 example-currency)</a>
+        <a href="#" id="decreaseHealth" class="button">-HEALTH (free)</a>
+    </div>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const currencyCounter = document.getElementById('currencyCounter');
+        const healthBar = document.getElementById('healthBar');
+        const healthBarInner = document.getElementById('health');
+        const increaseHealthBtn = document.getElementById('increaseHealth');
+        const decreaseHealthBtn = document.getElementById('decreaseHealth');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -40,13 +83,16 @@
             size: 50,
             color: 'blue',
             speed: 5,
-            direction: 'right' // 'right' or 'left'
+            direction: 'right',
+            health: 100
         };
 
         let currency = 0;
+        let enemySpawnCount = 1;
         const enemies = [];
         const projectiles = [];
         const enemyImageURL = 'https://art.pixilart.com/3fc9dd342c26319.png';
+        const bigEnemyImageURL = 'https://art.pixilart.com/3fc9dd342c26319.png'; // Placeholder URL for big enemy image
         const playerImageURL = 'https://upload.wikimedia.org/wikipedia/commons/3/32/Runner_stickman.png';
 
         let playerImage = new Image();
@@ -61,13 +107,40 @@
                 ctx.drawImage(playerImage, player.x - player.size / 2, player.y - player.size / 2, player.size, player.size);
             }
             ctx.restore();
+
+            healthBar.style.left = (player.x - player.size / 2) + 'px';
+            healthBar.style.top = (player.y + player.size / 2 + 10) + 'px';
         }
 
         function createEnemy() {
             const size = 30;
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
-            enemies.push({ x, y, size, speed: 1 });
+            enemies.push({ x, y, size, speed: 1, health: 1, isBig: false });
+        }
+
+        function createBigEnemy() {
+            const size = 60;
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            enemies.push({ x, y, size, speed: 0.5, health: 2, isBig: true });
+        }
+
+        function spawnEnemies() {
+            for (let i = 0; i < enemySpawnCount; i++) {
+                createEnemy();
+            }
+        }
+
+        function spawnBigEnemies() {
+            const bigEnemyCount = Math.floor(Math.random() * 3) + 1;
+            for (let i = 0; i < bigEnemyCount; i++) {
+                createBigEnemy();
+            }
+        }
+
+        function increaseEnemySpawnCount() {
+            enemySpawnCount++;
         }
 
         function moveEnemies() {
@@ -83,8 +156,15 @@
         function drawEnemies() {
             enemies.forEach(enemy => {
                 const img = new Image();
-                img.src = enemyImageURL;
+                img.src = enemy.isBig ? bigEnemyImageURL : enemyImageURL;
                 ctx.drawImage(img, enemy.x - enemy.size / 2, enemy.y - enemy.size / 2, enemy.size, enemy.size);
+
+                if (enemy.isBig) {
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(enemy.x - enemy.size / 2, enemy.y - enemy.size / 2 - 10, enemy.size, 5);
+                    ctx.fillStyle = 'green';
+                    ctx.fillRect(enemy.x - enemy.size / 2, enemy.y - enemy.size / 2 - 10, (enemy.size / 2) * enemy.health, 5);
+                }
             });
         }
 
@@ -119,7 +199,6 @@
                 projectile.x += projectile.dx;
                 projectile.y += projectile.dy;
 
-                // Remove projectiles that are out of bounds
                 if (
                     projectile.x < 0 || projectile.x > canvas.width ||
                     projectile.y < 0 || projectile.y > canvas.height
@@ -141,29 +220,61 @@
 
         function checkCollisions() {
             enemies.forEach((enemy, enemyIndex) => {
-                // Check collision with player
                 const dx = player.x - enemy.x;
                 const dy = player.y - enemy.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if (distance < player.size / 2 + enemy.size / 2) {
-                    alert("Game Over");
-                    location.reload();
+                    player.health -= enemy.isBig ? 20 : 10;
+                    if (player.health <= 0) {
+                        alert("Game Over");
+                        location.reload();
+                    } else {
+                        healthBarInner.style.width = player.health + '%';
+                        enemies.splice(enemyIndex, 1);
+                    }
                 }
 
-                // Check collision with projectiles
                 projectiles.forEach((projectile, projectileIndex) => {
                     const dx = projectile.x - enemy.x;
                     const dy = projectile.y - enemy.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     if (distance < projectile.size + enemy.size / 2) {
-                        enemies.splice(enemyIndex, 1);
+                        enemy.health -= 1;
                         projectiles.splice(projectileIndex, 1);
-                        currency += 2;
-                        currencyCounter.textContent = `example-currency-exchangeable-for-goods-and-services: ${currency}`;
+                        if (enemy.health <= 0) {
+                            enemies.splice(enemyIndex, 1);
+                            currency += enemy.isBig ? 5 : 2;
+                            currencyCounter.textContent = `example-currency-exchangeable-for-goods-and-services: ${currency}`;
+                        }
                     }
                 });
             });
         }
+
+        function increaseHealth(event) {
+            event.preventDefault();
+            if (currency >= 50) {
+                player.health = 100;
+                currency -= 50;
+                currencyCounter.textContent = `example-currency-exchangeable-for-goods-and-services: ${currency}`;
+                healthBarInner.style.width = player.health + '%';
+            } else {
+                alert("Not enough currency to increse health!");
+            }
+        }
+
+        function decreaseHealth(event) {
+            event.preventDefault();
+            player.health -= 10;
+            healthBarInner.style.width = player.health + '%';
+            if (player.health <= 0) {
+                alert("Game Over");
+                location.reload();
+            }
+        }
+
+        increaseHealthBtn.addEventListener('click', increaseHealth);
+        decreaseHealthBtn.addEventListener('click', decreaseHealth);
 
         const keys = {};
         window.addEventListener('keydown', (e) => {
@@ -192,7 +303,9 @@
             requestAnimationFrame(gameLoop);
         }
 
-        setInterval(createEnemy, 2000); // Create a new enemy every 2 seconds
+        setInterval(spawnEnemies, 2000);
+        setInterval(increaseEnemySpawnCount, 10000);
+        setInterval(spawnBigEnemies, 10000);
         gameLoop();
     </script>
 </body>
